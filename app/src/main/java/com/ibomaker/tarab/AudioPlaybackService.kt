@@ -124,8 +124,7 @@ class AudioPlaybackService : Service() {
 
     private fun actionIntent(action: String, requestCode: Int): PendingIntent {
         val intent = Intent(this, AudioPlaybackService::class.java).setAction(action)
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
-            if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0)
         return PendingIntent.getService(this, requestCode, intent, flags)
     }
 
