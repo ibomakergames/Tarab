@@ -186,7 +186,7 @@ class MainActivity : Activity() {
         }
         address = EditText(this).apply {
             hint = "ابحث أو أدخل رابطاً"
-            singleLine = true
+            isSingleLine = true
             textSize = 13f
             setTextColor(white)
             setHintTextColor(muted)
