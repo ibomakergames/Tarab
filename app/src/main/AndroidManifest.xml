@@ -8,7 +8,7 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_tarab"
         android:label="طرب أندرويد"
-        android:theme="@android:style/Theme.Material.NoActionBar"
+        android:theme="@style/TarabTheme"
         android:usesCleartextTraffic="false">
         <service
             android:name=".AudioPlaybackService"
