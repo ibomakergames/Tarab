@@ -329,6 +329,10 @@ class MainActivity : Activity() {
                 val status = if (statusCol >= 0) it.getInt(statusCol) else -1
                 val reason = if (reasonCol >= 0) it.getInt(reasonCol) else 0
                 val id = if (idCol >= 0) it.getLong(idCol) else -1L
+                val localUriCol = it.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
+                val mediaTypeCol = it.getColumnIndex(DownloadManager.COLUMN_MEDIA_TYPE)
+                val localUri = if (localUriCol >= 0) it.getString(localUriCol) else null
+                val mediaType = if (mediaTypeCol >= 0) it.getString(mediaTypeCol) else null
                 val state = when (status) {
                     DownloadManager.STATUS_SUCCESSFUL -> "اكتمل"
                     DownloadManager.STATUS_FAILED -> "فشل ($reason)"
@@ -337,12 +341,20 @@ class MainActivity : Activity() {
                     DownloadManager.STATUS_PAUSED -> "متوقف مؤقتاً"
                     else -> "حالة غير معروفة"
                 }
-                list.addView(card(title, state) {
-                    if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                        try { startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)) }
-                        catch (_: Exception) { }
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+                row.addView(card(title, state) {
+                    if (status == DownloadManager.STATUS_SUCCESSFUL && !localUri.isNullOrBlank()) {
+                        openDownloadedFile(Uri.parse(localUri), mediaType)
                     } else Toast.makeText(this, "معرّف التنزيل: $id", Toast.LENGTH_SHORT).show()
+                }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                row.addView(button("حذف") {
+                    manager.remove(id)
+                    showDownloads()
                 })
+                list.addView(row)
                 addGap(list, 8)
             }
         }
@@ -354,6 +366,18 @@ class MainActivity : Activity() {
         scroll.addView(list)
         page.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         content.addView(page)
+    }
+
+    private fun openDownloadedFile(uri: Uri, mimeType: String?) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, mimeType?.takeIf { it.isNotBlank() } ?: "*/*")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(intent)
+        } catch (_: Exception) {
+            Toast.makeText(this, "لا يوجد تطبيق مناسب لفتح هذا الملف", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun showLibrary() {
