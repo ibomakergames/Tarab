@@ -200,7 +200,8 @@ class MainActivity : Activity() {
             max = 100
             visibility = View.GONE
         }
-        val web = browser ?: WebView(this).also { browser = it; configureBrowser(it, progress) }
+        val web = browser ?: WebView(this).also { browser = it }
+        configureBrowser(web, progress)
         (web.parent as? ViewGroup)?.removeView(web)
         page.addView(toolbar)
         page.addView(progress, LinearLayout.LayoutParams(-1, 3))
