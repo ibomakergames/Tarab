@@ -4,7 +4,6 @@ import android.app.Activity
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -35,7 +34,6 @@ class MainActivity : Activity() {
     private lateinit var content: FrameLayout
     private var browser: WebView? = null
     private var address: EditText? = null
-    private var audioPlayer: MediaPlayer? = null
     private var videoPlayer: VideoView? = null
     private var currentTab = "home"
 
@@ -394,11 +392,11 @@ class MainActivity : Activity() {
         if (requestCode != pickFile || resultCode != RESULT_OK) return
         val uri = data?.data ?: return
         val mime = contentResolver.getType(uri).orEmpty()
+        try { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: Exception) { }
         if (mime.startsWith("video/")) playVideo(uri) else playAudio(uri)
     }
 
     private fun playAudio(uri: Uri) {
-        releasePlayers()
         content.removeAllViews()
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -415,31 +413,22 @@ class MainActivity : Activity() {
             setTextColor(muted)
             setPadding(0, 12, 0, 20)
         })
-        val status = TextView(this).apply { setTextColor(muted) }
-        lateinit var play: Button
-        play = button("تشغيل") {
-            try {
-                if (audioPlayer == null) {
-                    audioPlayer = MediaPlayer().apply {
-                        setDataSource(this@MainActivity, uri)
-                        setOnPreparedListener { it.start(); status.text = "يعمل الآن" }
-                        setOnCompletionListener { status.text = "انتهى التشغيل" }
-                        setOnErrorListener { _, _, _ -> status.text = "تعذر تشغيل هذا الملف"; true }
-                        prepareAsync()
-                    }
-                    status.text = "جارٍ التحضير..."
-                } else if (audioPlayer?.isPlaying == true) {
-                    audioPlayer?.pause(); play.text = "استئناف"; status.text = "متوقف مؤقتاً"
-                } else {
-                    audioPlayer?.start(); play.text = "إيقاف مؤقت"; status.text = "يعمل الآن"
-                }
-            } catch (e: Exception) {
-                status.text = "خطأ: ${e.localizedMessage}"
+        page.addView(button("تشغيل في الخلفية") {
+            val intent = Intent(this, AudioPlaybackService::class.java).apply {
+                action = AudioPlaybackService.ACTION_PLAY
+                putExtra(AudioPlaybackService.EXTRA_URI, uri.toString())
             }
-        }
-        page.addView(play)
-        page.addView(button("إيقاف") { releasePlayers(); status.text = "تم الإيقاف" })
-        page.addView(status)
+            if (android.os.Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
+        })
+        page.addView(button("إيقاف مؤقت") {
+            startService(Intent(this, AudioPlaybackService::class.java).setAction(AudioPlaybackService.ACTION_PAUSE))
+        })
+        page.addView(button("استئناف") {
+            startService(Intent(this, AudioPlaybackService::class.java).setAction(AudioPlaybackService.ACTION_RESUME))
+        })
+        page.addView(button("إيقاف") {
+            startService(Intent(this, AudioPlaybackService::class.java).setAction(AudioPlaybackService.ACTION_STOP))
+        })
         content.addView(page)
     }
 
