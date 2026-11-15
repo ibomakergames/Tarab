@@ -416,7 +416,8 @@ class MainActivity : Activity() {
             setPadding(0, 12, 0, 20)
         })
         val status = TextView(this).apply { setTextColor(muted) }
-        val play = button("تشغيل") {
+        lateinit var play: Button
+        play = button("تشغيل") {
             try {
                 if (audioPlayer == null) {
                     audioPlayer = MediaPlayer().apply {
