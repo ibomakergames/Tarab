@@ -478,9 +478,6 @@ class MainActivity : Activity() {
     }
 
     private fun releasePlayers() {
-        try { audioPlayer?.stop() } catch (_: Exception) { }
-        try { audioPlayer?.release() } catch (_: Exception) { }
-        audioPlayer = null
         try { videoPlayer?.stopPlayback() } catch (_: Exception) { }
         videoPlayer = null
     }
